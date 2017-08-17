@@ -3,22 +3,21 @@ basedir='/data/os/app'
 img1='localhub.local/public/centos-v21:7.3.1611'
 img2='localhub.local/public/centos-jdk18-v2:7.3.1611'
 img3='localhub.local/public/centos-for-nginx-v2:7.3.1611'
-mount2='-v /etc/hosts:/etc/hosts'
-dns='--dns=172.16.4.52 --dns=202.96.134.133'
+mount2="-v /etc/hosts:/etc/hosts"
+dns="--dns=172.16.4.52 --dns=202.96.134.133"
 comm_startapp='/home/jjshome-dir/start-my-app.sh'
-ContainerGateway='172.16.16.1'
+ContainerGateway="172.16.16.1"
 networkMask=24
-#about pipework see https://github.com/jetlwx/pipework
 pipworkpath='/usr/bin/pipework'
 attachDevice=br0 
 #cpu: 100m 200m,mem:4G
 comm_OPTS='--oom-kill-disable --rm  --memory=4294967296 --cpu-period=100000 --cpu-quota=200000'
 
- [ "$1" == "" ] && {
- showmsg=`cat start_leyoujia.sh  | grep function | awk '{print $2}' | awk -F'(' '{print $1}' | grep -v 'Run' | grep -v main`
+if [[ $1 == "" ]];then
+   showmsg=`cat start_leyoujia.sh  | grep function | awk '{print $2}' | awk -F'(' '{print $1}' | grep -v 'Run' | grep -v main`
    echo '$1 may be one of  '  ${showmsg}
-   exit 1
-}
+   exit 0
+fi
 
 function dockerRun(){
   ContainHostname=$1
@@ -27,8 +26,7 @@ function dockerRun(){
   imgage=$4
   shift;shift;shift;shift
   OPTS=$@
-  ContainerID=`docker run -d ${dns} ${mount2} ${OPTS} --hostname ${ContainHostname} --name ${ContainHostname} ${imgage} ${Cmd} `
- 
+  ContainerID=$(docker run -d ${dns} ${mount2} ${OPTS} --hostname ${ContainHostname}  --name ${ContainHostname} ${imgage} ${Cmd})
  ${pipworkpath} ${attachDevice} ${ContainerID} ${ContainerIP}'/'${networkMask}'@'${ContainerGateway}
 echo ${ContainerIP}  ${ContainHostname}  ${ContainerID}
 }
@@ -41,9 +39,9 @@ function redisRun() {
   img=$4
   OPTS='-v /data/os/app/'${app_name}'/jjshome-dir:/home/jjshome-dir -v /data/os/app/'${app_name}'/'${redis_dir}':/usr/local/redis '${comm_OPTS}
   cmd=${comm_startapp}
+  
   dockerRun ${ContainHostname} ${ContainerIP} ${cmd} ${img} ${OPTS} 
 }
-
 
 # has project dir
 function tomcatRun() {
@@ -66,7 +64,7 @@ function tomcatRun_noproject(){
   ContainHostname=$3
   ContainerIP=$4
   img=$5
-  OPTS='-v /data/os/app/'${app_name}'/'${tomcatDir}':/usr/local/tomcat -v /data/os/app/'${app_name}'/jjshome-dir:/home/jjshome-dir '${comm_OPTS}
+  OPTS='-v /data/os/app/'${app_name}'/'${tomcatDir}':/usr/local/tomcat  -v /data/os/app/'${app_name}'/jjshome-dir:/home/jjshome-dir '${comm_OPTS}
   cmd=${comm_startapp}
   
   dockerRun ${ContainHostname} ${ContainerIP} ${cmd} ${img} ${OPTS} 
@@ -79,8 +77,8 @@ function javaAppRun() {
   ContainerIP=$4
   img=$5
   cmd=${comm_startapp}
-  OPTS='-v /data/os/app/'${app_name}'/'${appDir}':/home/admin/'${appDir}'  -v /data/os/app/'${app_name}'/jjshome-dir:/home/jjshome-dir '${comm_OPTS}
-  
+   OPTS='-v /data/os/app/'${app_name}'/'${appDir}':/home/admin/'${appDir}'  -v /data/os/app/'${app_name}'/jjshome-dir:/home/jjshome-dir '${comm_OPTS}
+ 
   dockerRun ${ContainHostname} ${ContainerIP} ${cmd} ${img} ${OPTS} 
 }
 #NGINX RPM INSTALL 
@@ -94,13 +92,12 @@ function ngxinRPMRun() {
   
   dockerRun ${ContainHostname} ${ContainerIP} ${cmd} ${img} ${OPTS} 
 }
-
 function nginxIRun() {
   ContainHostname=$1
   ContainerIP=$2
   img=$3
   cmd='/usr/local/nginx/start-my-app.sh'
-  OPTS='-v /usr/local/nginx:/usr/local/nginx -v /web:/web '${comm_OPTS}
+  OPTS='-v /usr/local/nginx:/usr/local/nginx -v /web:/web  '${comm_OPTS}
   
   dockerRun ${ContainHostname} ${ContainerIP} ${cmd} ${img} ${OPTS} 
 }
@@ -122,16 +119,15 @@ function mycatRun() {
   img=$4
   cmd=${comm_startapp}
   OPTS='-v /data/os/app/'${app_name}'/mycat:/usr/local/mycat -v /data/os/app/'${app_name}'/jjshome-dir:/home/jjshome-dir '${comm_OPTS}
- 
+  
   dockerRun ${ContainHostname} ${ContainerIP} ${cmd} ${img} ${OPTS} 
 }
-
 
 
 function fang-esf-mycat() {
   #/data/os/app/fang-esf-mycat
   app_name='fang-esf-mycat'
-  ContainHostname='fang-esf-mycat.dev.jjshome.local'
+  ContainHostname='fang-esf-mycat.dev.jjshome.com'
   ContainerIP='172.16.16.11'
   img=${img1}
  mycatRun ${app_name} ${ContainHostname} ${ContainerIP} ${img}
@@ -148,7 +144,7 @@ function bigdata-nginx() {
 function platform-mycat() {
   #/data/os/app/platform-mycat
   app_name='platform-mycat'
-  ContainHostname='platform-mycat.dev.jjshome.local'
+  ContainHostname='platform-mycat.dev.jjshome.com'
   ContainerIP='172.16.16.12'
   img=${img1}
  mycatRun ${app_name} ${ContainHostname} ${ContainerIP} ${img}
@@ -156,7 +152,7 @@ function platform-mycat() {
 
 function public-memcached() {
   app_name="public-memcached"
-  ContainHostname="public-memcached.dev.jjshome.local"
+  ContainHostname="public-memcached.dev.jjshome.com"
   ContainerIP='172.16.16.13'
   img=${img1}
   memcachedRun ${app_name} ${ContainHostname} ${ContainerIP} ${img}
@@ -419,7 +415,7 @@ function bigdata-fkp-view(){
 function bigdata-logs-for-bigdata(){
   #/data/os/app/bigdata-logs-for-bigdata/tomcat
   #/data/os/app/bigdata-logs-for-bigdata/app
-  app_name=bigdata-logs-for-bigdata
+  app_name=bigdata-logs-for-bigdata.dev.jjshome.local
   tomcatDir=tomcat
   projectDir=app
   ContainHostname='bigdata-logs-for-bigdata.dev.jjshome.local'
@@ -498,7 +494,7 @@ function coa-api-manager(){
   ContainerIP='172.16.16.43'
   img=${img1}
 
-  tomcatRun ${app_name} ${tomcatDir} ${projectDir} ${ContainHostname} ${ContainerIP} ${img}
+  tomcatRun ${app_name} ${tomcatDir} ${projectDir} ${ContainHostname} ${ContainerIP} ${img2}
 }
 function coa-app-api-admin(){
   #/data/os/app/coa-app-api-admin/tomcat
@@ -968,7 +964,7 @@ function jinrong-dangan-new(){
   #/data/os/app/jinrong-dangan-new/webapp
   app_name='jinrong-dangan-new'
   tomcatDir='tomcat_dangan'
-  projectDir'=webapp'
+  projectDir='webapp'
   ContainHostname='jinrong-dangan-new.dev.jjshome.local'
   ContainerIP='172.16.16.82'
   img=${img1}
@@ -1246,7 +1242,7 @@ function platform-login(){
   app_name='platform-login'
   tomcatDir='tomcat'
   projectDir='jjslogin'
-  ContainHostname='login.dev.jjshome.local'
+  ContainHostname='platform-login.dev.jjshome.local'
   ContainerIP='172.16.16.105'
   img=${img1}
 
@@ -1423,7 +1419,6 @@ function platform-msg-center-api-backend(){
   tomcatRun ${app_name} ${tomcatDir} ${projectDir} ${ContainHostname} ${ContainerIP} ${img}
 }
 
-
 function i() {
   ContainHostname='i.dev.jjshome.local'
   ContainerIP='172.16.16.254'
@@ -1432,8 +1427,8 @@ function i() {
 nginxIRun ${ContainHostname} ${ContainerIP} ${img} 
 }
 function Autostart() { 
-  dubbo
-  sleep 5
+  #dubbo
+  #sleep 5
   platform-xdiamond
   sleep 5
   fang-esf-mycat
@@ -1514,8 +1509,7 @@ function Autostart() {
   bigdata-fkp-view 
   sleep 5
  
- #未部署
-  #bigdata-logs-for-bigdata 
+  bigdata-logs-for-bigdata 
   sleep 5
  
   bigdata-mongodb-api 
@@ -1594,15 +1588,14 @@ function Autostart() {
  
   platform-msg-center-api-main 
    sleep 5
- 
+ platform-msg-center-api-backend
+sleep 5
   platform-msg-center-api-front 
    sleep 5
  
   platform-msg-center-api-timer 
    sleep 5
  
- platform-msg-center-api-backend
- sleep 5
   platform-msg-center-old 
    sleep 5
  
@@ -1761,20 +1754,32 @@ function Autostart() {
  
  jinrong-tax-backend 
    sleep 5
- 
+ i
+
+}
+ function stop_docker() {
+app_name=$1
+[ "${app_name}" == "" ] &&echo 'app_name not allowd null' &&exit 1
+ dockerId=`docker ps |grep ${app_name} |awk '{print $1}'`
+
+  [ "${dockerId}" != "" ] &&{
+     docker stop ${dockerId}
+  }
 }
 
-function main() {
 case $1 in
-   $1)
-     $1
- ;;
   "auto")
   Autostart
   ;;
 
+ "stop")
+   stop_docker $2
+;;
+   "start")
+     $2
+     ;;
+   "restart")
+     stop_docker $2 
+      $2
+;;
  esac
-
-}
-
-main
