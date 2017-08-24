@@ -34,3 +34,5 @@ echo 'docker is a good softwrare!!'
 /usr/sbin/sshd -D
 ```
 
+ 4、 you must install verdon/pipework to /usr/bin first
+
